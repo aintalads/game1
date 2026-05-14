@@ -45,7 +45,7 @@ let armoryCalledFromDebrief = false;
 
 // --- MOBILE SCALING FACTOR ---
 const isMobile = window.innerWidth < 900;
-const gameScale = isMobile ? 1.5 : 1.0; // Makes game objects 50% larger on mobile
+const gameScale = isMobile ? 0.4 : 1.0; // Changed from 1.5 to 0.8!
 const META_UPGRADE_DEFS = [
     // ── TIER 1 (always available) ──────────────────────────
     { id: 'extraAmmo',   tier: 1, col: 0, title: 'AMMO RESERVE',
@@ -594,13 +594,18 @@ function handleTouchMove(e) {
             nub.style.transform = `translate(calc(-50% + ${Math.cos(angle)*dist}px), calc(-50% + ${Math.sin(angle)*dist}px))`;
         }
 
-        if (touch.identifier === joysticks.right.id) {
+      if (touch.identifier === joysticks.right.id) {
             let dx = tx - joysticks.right.startX;
             let dy = ty - joysticks.right.startY;
             let angle = Math.atan2(dy, dx);
             
             player.angle = angle; 
             
+            // --- ADD THIS: FAKE THE MOUSE POSITION FOR SHOOTING ---
+            mouse.x = player.x + Math.cos(angle) * 100;
+            mouse.y = player.y + Math.sin(angle) * 100;
+            
+            // Visual Update
             const nub = document.querySelector('#right-joystick .joystick-nub');
             let dist = Math.min(Math.hypot(dx, dy), 50);
             nub.style.transform = `translate(calc(-50% + ${Math.cos(angle)*dist}px), calc(-50% + ${Math.sin(angle)*dist}px))`;
@@ -913,9 +918,15 @@ function update() {
         if (player.dashTimer <= 0) { player.isDashing = false; player.speed = player.baseSpeed; }
     }
 
-    let dx = 0; let dy = 0;
+   let dx = 0; let dy = 0;
     if (keys['w']) dy -= 1; if (keys['s']) dy += 1;
     if (keys['a']) dx -= 1; if (keys['d']) dx += 1;
+
+    // --- ADD THIS: VIRTUAL JOYSTICK MOVEMENT ---
+    if (joysticks.left.active) {
+        dx += joysticks.left.vX;
+        dy += joysticks.left.vY;
+    }
     if (dx !== 0 || dy !== 0) {
         const length = Math.hypot(dx, dy); player.x += (dx / length) * player.speed; player.y += (dy / length) * player.speed;
     }
