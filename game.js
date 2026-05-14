@@ -308,8 +308,8 @@ function generateBlocks() {
     
     for (let i = 0; i < numBlocks && attempts < 50; i++) {
         let isHorizontal = Math.random() > 0.5;
-        let w = isHorizontal ? (Math.random() * 200 + 150) : 50;
-        let h = isHorizontal ? 50 : (Math.random() * 200 + 150);
+      let w = (Math.random() * 100 + 50) * gameScale; 
+let h = (Math.random() * 100 + 50) * gameScale;
         
         let x = Math.random() * (canvas.width - w - 80) + 40;
         let y = Math.random() * (canvas.height - h - 80) + 40;
@@ -765,7 +765,7 @@ function spawnDrop(x, y, type) {
     if (type === 'pierce') color = '#aa00ff';
     if (type === 'heal') color = '#00ff66'; // NEW: Green for healing
     
-    drops.push({ x, y, radius: 15, angle: 0, type: type, color: color });
+    drops.push({ x, y, radius: 15* gameScale, angle: 0, type: type, color: color });
 }
 function resolveBlockCollisions(entity) {
     blocks.forEach(block => {
@@ -895,12 +895,26 @@ function update() {
     }
 
     // 3. OVERCLOCK TIMER
+   // 3. OVERCLOCK TIMER (Countdown only)
     if (player.overclockTimer > 0) {
         player.overclockTimer--;
         if (player.overclockTimer === 0) updateUI();
-        if (isMouseDown && mode === 1 && autoFireTimer <= 0) {
+    }
+
+    // ============================================
+    // --- UNIVERSAL SHOOTING LOGIC (MOBILE & PC) ---
+    // ============================================
+    if (isMouseDown && mode === 1 && autoFireTimer <= 0) {
+        
+        // Check if player has Overclock OR has normal ammo left
+        if (player.overclockTimer > 0 || playerAmmo > 0) {
             
-            // --- TWIN LINK LOGIC (Overclock Fire) ---
+            // If NOT overclocked, consume 1 ammo
+            if (player.overclockTimer <= 0) {
+                playerAmmo--;
+            }
+
+            // --- SHOOTING LOGIC (Twin-Link Check) ---
             if (player.upgrades && player.upgrades.twinLink) {
                 let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
                 let pAngle = angle + Math.PI/2;
@@ -911,7 +925,9 @@ function update() {
                 shootBullet(player.x, player.y, mouse.x, mouse.y, true, 'standard');
             }
             
-            autoFireTimer = 8; updateUI(); 
+            // Fire Rate: Overclock is fast (8 frames), Normal is slower (15 frames)
+            autoFireTimer = (player.overclockTimer > 0) ? 8 : 15; 
+            updateUI(); 
         }
     }
     // ============================================
@@ -998,7 +1014,7 @@ function update() {
                 
                 bullets.push({
                     x: player.x, y: player.y, vx: Math.cos(a)*18, vy: Math.sin(a)*18,
-                    radius: 12, color: '#ffd700', isPlayer: true, 
+                    radius: 12* gameScale, color: '#ffd700', isPlayer: true, 
                     // TRICK: Start at 2. Since max is 3, it bounces exactly ONCE!
                     bounces: 2, 
                     life: 0, maxLife: 100, damage: 3
